@@ -1,0 +1,21 @@
+{
+  "Test":{
+    "_source": {
+      "enabled": true
+    },
+    "properties": {
+      "record_id": {
+        "type": "long",
+        "store": true
+      },
+      "name": {
+        "type": "string",
+        "store": true
+      },
+      "create_date":{
+        "type":"date",
+        "format": "dateOptionalTime"
+      }
+    }
+  }
+}
