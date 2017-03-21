@@ -16,6 +16,7 @@
         {host, "https://localhost"},
         {port, 9200},
         {pool_size, 10},
-        {max_pool_overflow, 15}
+        {max_pool_overflow, 15},
+        {http_options, [{timeout, 1500000}]}
     ]}
 ]}.

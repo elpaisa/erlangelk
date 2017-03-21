@@ -8,6 +8,7 @@
     start/0,
     transaction/1,
     create_index/1,
+    create_index/2,
     create_index/3,
     delete_index/1,
     delete_index/2,
@@ -27,6 +28,8 @@
     search/3,
     search/4,
     search/5,
+    scroll/4,
+    scroll/5,
     count/3,
     count/4,
     count/5,
@@ -47,14 +50,51 @@ test() ->
     Docs = [
       {
         <<"test-index">>, <<"Test">>, <<"id1">>,
-        [{<<"record_id">>, 1},{<<"name">>, <<"None">>}, {<<"create_date">>, <<"2017-02-28T10:43:41.532531">>}]
+        [
+          {<<"record_id">>, 1},{<<"name">>, <<"None">>}, {<<"customer_id">>, 1},
+          {<<"create_date">>, <<"2016-09-14T10:20:09+00:00">>}]
       },
       {
         <<"test-index">>, <<"Test">>, <<"id2">>,
-        [{<<"record_id">>, 2},{<<"name">>, <<"Other">>}, {<<"create_date">>, <<"2017-03-29T10:43:41.532531">>}]
+        [
+          {<<"record_id">>, 2},{<<"name">>, <<"Any">>}, {<<"customer_id">>, 1},
+          {<<"create_date">>, <<"2016-09-15T11:20:09+00:00">>}]
+      },
+      {
+        <<"test-index">>, <<"Test">>, <<"id3">>,
+        [
+          {<<"record_id">>, 3},{<<"name">>, <<"Any">>}, {<<"customer_id">>, 1},
+          {<<"create_date">>, <<"2016-09-15T12:20:09+00:00">>}]
       }
     ],
-    io:format("Bulk ~p ~n", [bulk_index(Docs)]),
+    {ok, _} = bulk_index(Docs),
+    Query = [
+      {
+        query, [
+        {
+          bool, [
+          {
+            must, [{match, [{customer_id, 1}]}]
+          },
+          {
+            filter, [
+            {range, [
+              {create_date, [
+                {gt, <<"2016-09-14T14:20:09+00:00">>},
+                {lt, <<"2016-09-15T14:20:09+00:00">>}
+              ]}]}
+          ]
+          }
+        ]
+        }
+      ]
+      }
+    ],
+    Fun = fun(Iterator) ->
+          io:format("Iterator: ~p~n", [Iterator]),
+          ok
+        end,
+    ok = elasticsearch:scroll("test-index", "Test", Query, Fun, [{size, 1},{scroll, <<"2m">>}]),
     {ok,[{_,true}]} = delete_index("test-index"),
     ok.
 
@@ -216,6 +256,56 @@ count(Index, Type, Query, Params) ->
 
 count(Worker, Index, Type, Query, Params) ->
     elasticsearch_worker:request(Worker, post, [Index, Type, <<"_count">>], Query, Params).
+
+scroll(Index, Type, Query, Callback) ->
+  scroll(Index, Type, Query, Callback, []).
+
+scroll(Worker, Index, Type, Query, Callback) when is_pid(Worker) ->
+  scroll(Worker, Index, Type, Query, Callback, []);
+scroll(Index, Type, Query, Callback, Params) ->
+  poolboy:transaction(elasticsearch, fun (Worker) ->
+    scroll(Worker, Index, Type, Query, Callback, Params)
+                                     end).
+scroll(Worker, Index, Type, Query, Callback, Params) ->
+  _Results = elasticsearch_worker:request(Worker, post, [Index, Type, <<"_search">>], Query, Params),
+  scroll_results(Worker, _Results, Callback).
+
+
+scroll_results(_Worker, [{scroll_id, undefined}, _, _, _], _Callback) ->
+  false;
+scroll_results(_Worker, [{scroll_id, _ScrollId}, {total, Total}, {count, Count}, _], _Callback)
+  when Count >= Total ->
+  ok;
+scroll_results(Worker, [{scroll_id, ScrollId}, {total, _Total}, {count, Count}, _], Callback) ->
+  {ok, _Results} = elasticsearch_worker:request(Worker, get, [<<"_search">>, <<"scroll">>],  <<"">>,
+    [{scroll, <<"1m">>},{scroll_id, ScrollId}]),
+  Iterator = get_iterator(_Results, Count),
+  Callback(Iterator),
+  scroll_results(Worker, Iterator, Callback);
+scroll_results(Worker, {ok, _Results}, Callback) ->
+  Iterator = get_iterator(_Results, 0),
+  Callback(Iterator),
+  scroll_results(Worker, Iterator, Callback);
+scroll_results(_Worker, {error, _Any}, _Callback) ->
+  {error, _Any}.
+
+get_iterator(undefined, _CurrentCount) ->
+  [
+    {scroll_id, undefined},
+    {total, 0},
+    {count, 0},
+    {results, []}
+  ];
+get_iterator(_Hits, CurrentCount) ->
+  Results = proplists:get_value(<<"hits">>, _Hits),
+  Hits = proplists:get_value(<<"hits">>, Results),
+  ResultsCount = length(Hits) + CurrentCount,
+  [
+    {scroll_id, proplists:get_value(<<"_scroll_id">>, _Hits)},
+    {total, proplists:get_value(<<"total">>, Results)},
+    {count, ResultsCount},
+    {results, Hits}
+  ].
 
 get_index_settings(Shards, Replicas) ->
   Settings = [{settings,

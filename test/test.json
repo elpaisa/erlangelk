@@ -12,6 +12,10 @@
         "type": "string",
         "store": true
       },
+      "customer_id": {
+        "type": "long",
+        "store": true
+      },
       "create_date":{
         "type":"date",
         "format": "dateOptionalTime"

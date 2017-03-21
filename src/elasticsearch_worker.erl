@@ -59,6 +59,8 @@ handle_call({Method, Path, Body0, Params0}, _From, #state{ base_url = BaseUrl, h
             {URL, Headers};
         head ->
             {URL, Headers};
+        get ->
+            {URL, Headers};
         _      ->
             {URL, Headers, "application/json", to_list(Body)}
     end,
@@ -72,9 +74,11 @@ handle_call({Method, Path, Body0, Params0}, _From, #state{ base_url = BaseUrl, h
         {ok, {_Status, RespBodyFail}} ->
             {error, RespBodyFail};
         {error, Reason} ->
-            {error, Reason}
+            {error, Reason};
+        _Any -> io:format("Unexpected ~p", [_Any])
     end,
     {reply, Reply, State};
+
 handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
 
