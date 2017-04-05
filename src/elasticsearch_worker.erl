@@ -44,7 +44,7 @@ init([Host, Port, HttpOptions]) ->
     {ok, State}.
 
 handle_call({Method, Path, Body0, Params0}, _From, #state{ base_url = BaseUrl, http_options = HttpOptions } = State) ->
-    URLPath = BaseUrl ++ string:join([escape(to_list(P)) || P <- Path], "/"),
+    URLPath = BaseUrl ++ string:join([elasticsearch_utils:escape_uri(to_list(P)) || P <- Path], "/"),
     Body = case jsx:is_json(Body0) of
         true -> Body0;
         false -> body_encode(Body0)
@@ -110,5 +110,3 @@ to_list(Binary) when is_binary(Binary) -> binary_to_list(Binary);
 to_list(Integer) when is_integer(Integer) -> integer_to_list(Integer);
 to_list(Atom) when is_atom(Atom) -> atom_to_list(Atom).
 
-escape(String) ->
-    edoc_lib:escape_uri(String).
