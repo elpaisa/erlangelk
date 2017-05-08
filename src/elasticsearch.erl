@@ -1,5 +1,7 @@
 -module(elasticsearch).
 
+-include("elasticsearch.hrl").
+
 -ifdef(TEST).
 -compile([export_all]).
 -endif.
@@ -125,9 +127,10 @@ bulk_index(IndexTypeIdJsonTup) ->
                              Header = bulk_index_header(Index, Type, Id, HeaderInformation),
                              [ Header, <<"\n">>, elasticsearch_worker:body_encode(Doc), <<"\n">> ]
                      end, IndexTypeIdJsonTup),
-    poolboy:transaction(elasticsearch, fun (Worker) ->
-        elasticsearch_worker:request(Worker, post, ["_bulk"], iolist_to_binary(JsonList), [])
-    end).
+    elasticsearch_worker:do_request(
+      post, ["_bulk"], iolist_to_binary(JsonList), []
+    ).
+
 
 create_mapping(Index, MappingName, Content) ->
     Path = string:join([Index, "_mapping", MappingName], "/"),

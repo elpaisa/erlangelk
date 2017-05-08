@@ -2,32 +2,33 @@
 
 -behavior(application).
 
+-include("elasticsearch.hrl").
+
 -export([
     start/2,
-    stop/1
+    stop/1,
+    get_env/2
 ]).
 
-%%
+%% --------------------------------------------------
 %% application callbacks
-%%
+%% --------------------------------------------------
 
 start(_StartType, _StartArgs) ->
     {ok, _Pid} = start_elasticsearch_httpc_profile(),
-    Host = get_env(host, "localhost"),
-    Port = get_env(port, 9200),
     PoolSize = get_env(pool_size, 2),
     PoolMaxOverflow = get_env(pool_max_overflow, 10),
     HttpOptions = get_env(http_options, []),
-    elasticsearch_sup:start_link([Host, Port, PoolSize, PoolMaxOverflow, HttpOptions]).
+    elasticsearch_sup:start_link([?ELASTICSEARCH_URL, ?ELASTICSEARCH_PORT,
+        PoolSize, PoolMaxOverflow, HttpOptions]
+    ).
 
 stop(_State) ->
     ok.
 
-%%
-%% private
-%%
-%% start inets with an elasticsearch profile
-%% possibly with configuration options
+%% --------------------------------------------------
+%% @private start inets with an elasticsearch profile
+%% --------------------------------------------------
 start_elasticsearch_httpc_profile() ->
     inets:start(httpc, [{profile, elasticsearch}]).
 
