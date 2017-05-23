@@ -182,9 +182,9 @@ create_index(Name, _Settings, _Mappings) ->
 
 path_exists(Path) ->
     Tokens = string:tokens(Path, "/"),
-    poolboy:transaction(elasticsearch, fun (Worker) ->
-        elasticsearch_worker:request(Worker, head, Tokens, <<>>, [])
-    end).
+    elasticsearch_worker:do_request(
+      head, [Tokens], <<>>, []
+    ).
 
 index(Index, Type, Doc) ->
     index(Index, Type, undefined, Doc, []).

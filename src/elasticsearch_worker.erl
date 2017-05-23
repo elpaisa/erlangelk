@@ -109,6 +109,8 @@ do_request(Method, Path, Body0, Params0, BaseUrl, HttpOptions) ->
       {ok, false};
     {ok, {_Status, RespBodyFail}} ->
       {error, RespBodyFail};
+    {error, <<>>} ->
+      {ok, false};
     {error, Reason} ->
       {error, Reason};
     _Any -> io:format("Unexpected ~p", [_Any])
