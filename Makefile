@@ -1,23 +1,42 @@
 SHELL := /bin/bash
-REBAR = ./rebar
+REBAR = ./rebar3
 
 all: compile
 
-compile: get_deps
-	@$(REBAR) compile
+me:
+	$(REBAR) compile skip_deps=true
 
-compile_skip:
-	@$(REBAR) compile skip_deps=true
+shell:
+	$(REBAR) shell
 
-clean:
-	@$(REBAR) clean
+
+test:
+	$(REBAR) do eunit, cover
 
 eunit:
-	$(REBAR) skip_deps=true eunit
+	$(REBAR) eunit
 
-get_deps:
-	@echo "Fetching deps as: $(REBAR)"
-	@$(REBAR) get-deps
+empty:
+	rm -rf _build
+	rm -rf rebar.lock
 
-run:
-	erl -boot start_sasl -sname elasticsearch -s elasticsearch -pa ebin -pa deps/*/ebin
+doc:
+	apidoc -v -i doc/ -o doc/api/ -f .erl
+
+
+dialyzer:
+	./dialyzer.sh
+
+
+clean:
+	$(REBAR) clean
+
+clean-doc:
+	rm -rf doc/api
+
+release:
+	$(REBAR) do eunit, clean, release
+	$(REBAR) tar
+
+
+fresh: clean compile test

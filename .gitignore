@@ -1,15 +1,40 @@
-.eunit
-.qc
-deps
-*.o
-*.app
+/deps
+/ebin
+.rebar
 *.beam
-*.plt
-*.log
-*.log.*
-*.dump
+erl_crash.dump
+
+# vim
+*.swp
+
+# dailyzer
+/.dialyzer_deps_plt
+/dialyzer.output
+dialyzer.sh
+
+# eunit
+/.eunit
+*.coverage.xml
+eunit.log
+
+# ct
+/logs
+ct.coverdata
+
+# developers copy
+*.config
+
+# documentation
+doc/api
+
+# Ignore OSX DS_STORE file
 .DS_Store
-.tm_properties
-_build
 .idea
-.iml
+*.iml
+rebar.lock
+compile_commands.json
+*.coverdata
+_build
+TEST*
+*.crashdump
+*.log

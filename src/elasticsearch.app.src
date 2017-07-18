@@ -1,6 +1,6 @@
 {application, elasticsearch, [
     {description, "An Erlang app for elasticsearch REST."},
-    {vsn, "0.0.1"},
+    {vsn, "0.0.2"},
     {modules, []},
     {registered,[]},
     {applications, [

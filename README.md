@@ -1,7 +1,20 @@
 # erlangelk
 
+Elasticsearch Erlang Client
+
+## Overview
+
+This module allows to perform different operations against a single elasticsearch cluster, one of the most interesting
+features is the `bulk` indexing that allows to push a number of documents to the cluster.
+
+## Ownership
+
+This project is supported by John Diaz, email me for any issues [email][email]
+
+Please see project definition [documentation][api-documentation]
+
 Run:
-    bash dev.sh
+    make shell
     
     Eshell V8.2  (abort with ^G)
     (erl@local)1> elasticsearch:start().
@@ -31,8 +44,5 @@ Most of this code was taken from
 
 An erlang client for elasticsearch's REST interface
 
-## other elasticsearch clients and why this was made
-
-* [erlasticsearch](https://github.com/dieswaytoofast/erlasticsearch) - too much frustration with thrift.
-* [erlastic_search](https://github.com/tsloughter/erlastic_search) - dependency on hackney for http requests (built-in pooling is broken); unable to configure without wrapping the module.
-
+[email]: mailto:clientes@desarrollowebmedellin.com
+[api-documentation]: https://algithub.pd.alertlogic.net/pages/alertlogic/al_distributed/

@@ -9,7 +9,7 @@
   http_options
 }).
 
--define(ELASTICSEARCH_URL, elasticsearch_app:get_env(host, "localhost")).
+-define(ELASTICSEARCH_URL, elasticsearch_app:get_env(host, "http://localhost")).
 -define(ELASTICSEARCH_PORT, elasticsearch_app:get_env(port, 9200)).
 
 -define(PROFILE, elasticsearch).

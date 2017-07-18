@@ -30,8 +30,8 @@ request(Worker, Method, Path, Body, Params) ->
 %%
 %% gen_server
 %%
-init([Host, Port, HttpOptions]) ->
-  BaseUrl = lists:concat([?ELASTICSEARCH_URL, ":", to_list(?ELASTICSEARCH_PORT), "/"]),
+init([_Host, _Port, HttpOptions]) ->
+  BaseUrl = lists:concat([?ELASTICSEARCH_URL, ":", utils:need_list(?ELASTICSEARCH_PORT), "/"]),
   State = #state{
     base_url = BaseUrl,
     http_options = lists:ukeymerge(1, lists:usort(HttpOptions), ?DEFAULT_HTTP_OPTIONS)
@@ -68,28 +68,24 @@ search_result(Body) ->
   Result = jsx:decode(Body),
   Result.
 
-to_list(List) when is_list(List) -> List;
-to_list(Binary) when is_binary(Binary) -> binary_to_list(Binary);
-to_list(Integer) when is_integer(Integer) -> integer_to_list(Integer);
-to_list(Atom) when is_atom(Atom) -> atom_to_list(Atom).
 
 do_request(Method, Path, Body0, Params0) ->
-  BaseUrl = lists:concat([?ELASTICSEARCH_URL, ":", to_list(?ELASTICSEARCH_PORT), "/"]),
+  BaseUrl = lists:concat([?ELASTICSEARCH_URL, ":", utils:need_list(?ELASTICSEARCH_PORT), "/"]),
   HTTPOptions = elasticsearch_app:get_env(http_options, []),
   HttpOptions = lists:ukeymerge(1, lists:usort(HTTPOptions), ?DEFAULT_HTTP_OPTIONS),
   do_request(Method, Path, Body0, Params0, BaseUrl, HttpOptions).
 
 do_request(Method, Path, Body0, Params0, BaseUrl, HttpOptions) ->
-  URLPath = BaseUrl ++ string:join([elasticsearch_utils:escape_uri(to_list(P)) || P <- Path], "/"),
+  URLPath = BaseUrl ++ string:join([utils:escape_uri(utils:need_list(P)) || P <- Path], "/"),
   Body = case jsx:is_json(Body0) of
            true -> Body0;
            false -> body_encode(Body0)
          end,
-  Params = string:join([string:join([to_list(Key), to_list(Value)], "=") || {Key, Value} <- Params0], "&"),
+  Params = string:join([string:join([utils:need_list(Key), utils:need_list(Value)], "=") || {Key, Value} <- Params0], "&"),
   URL = if length(Params) > 0 -> lists:concat([URLPath, "?", Params]);
           true -> URLPath
         end,
-  Headers = [{"Content-Length", to_list(erlang:iolist_size(Body))}],
+  Headers = [{"Content-Length", utils:need_list(erlang:iolist_size(Body))}],
   Request = case Method of
               delete ->
                 {URL, Headers};
@@ -98,7 +94,7 @@ do_request(Method, Path, Body0, Params0, BaseUrl, HttpOptions) ->
               get ->
                 {URL, Headers};
               _ ->
-                {URL, Headers, "application/json", to_list(Body)}
+                {URL, Headers, "application/json", utils:need_list(Body)}
             end,
   case httpc:request(Method, Request, HttpOptions, ?HTTPC_OPTIONS, ?PROFILE) of
     {ok, {Status, _}} when Status == 200, Method == head ->
